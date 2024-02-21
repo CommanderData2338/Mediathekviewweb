@@ -95,19 +95,22 @@ def vttxmltosrt(data):
 
 			for el in elm:
 				b = el.attrib.get("begin", "")
-				if "s" in b and "." in b:
-					b = convert_time(b)
 				e = el.attrib.get("end", "")
-				if "s" in e and "." in e:
-					e = convert_time(e)
 				span = el.findall("{http://www.w3.org/ns/ttml}span")
+				txt = None
 				if span:
 					for span in span:
-						txt = span.text
+						line = span.text
+						txt = txt + "\n" + line if txt else line
 				else:
 					txt = el.text
 				if txt and b and e:
-					txt = txt.replace("<br/>", "")
+					if "s" in b and "." in b and "s" in e and "." in e:
+						b = convert_time(b)
+						e = convert_time(e)
+					if not b.startswith("0") and not e.startswith("0"):
+						b = "0" + b[1:]
+					txt = txt.replace("<br/>", "\n")
 					count += 1
 					tt += str(count) + "\n"
 					tt += str(b.replace(".", ",") + " --> " + e.replace(".", ",")) + "\n"
@@ -184,7 +187,7 @@ class Mediathekviewweb(Screen):
 				if js.get("url_video_low"):
 					urls.append(("Niedrig", js.get("url_video_low") + "##" + sub))
 				img = js.get("url_website", "")
-				liste.append(("MVW_PLAY", ensure_str("[%s] %s - %s" % (js.get("channel", ""), js.get("topic", ""), js.get("title", ""))), urls, ensure_str("%s%s\n%s" % ("UT\n" if sub else "" , timestamp, js.get("description", ""))), img, duration, ""))
+				liste.append(("MVW_PLAY", ensure_str("[%s] %s - %s" % (js.get("channel", ""), js.get("topic", ""), js.get("title", ""))), urls, ensure_str("%s%s\n%s" % ("UT\n" if sub else "", timestamp, js.get("description", ""))), img, duration, ""))
 			if totalResults > (page * size):
 				liste.append(("MVW_API", "Nextpage", (ensure_str(query), ensure_str(channel), (page + 1), size), "", PLUGINPATH + "/img/" + "nextpage.png", "", ""))
 		if liste:
