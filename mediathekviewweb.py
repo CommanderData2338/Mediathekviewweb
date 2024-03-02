@@ -45,11 +45,11 @@ config.plugins.MVW.AUTOPLAY = ConfigYesNo(default=False)
 config.plugins.MVW.FUTURE = ConfigYesNo(default=False)
 config.plugins.MVW.INTSKIN = ConfigYesNo(default=False)
 
-PLUGINPATH = "/usr/lib/enigma2/python/Plugins/Extensions/Mediathekviewweb/"
+PLUGINPATH = "/usr/lib/enigma2/python/Plugins/Extensions/Mediathekviewweb/img/"
 FHD = getDesktop(0).size().height() > 720
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0"
 TMPIC = "/tmp/cover/bild.jpg"
-SKINFILE = PLUGINPATH + "skin_FHD.xml" if FHD else PLUGINPATH + "skin_HD.xml"
+SKINFILE = PLUGINPATH[:-4] + "skin_FHD.xml" if FHD else PLUGINPATH[:-4] + "skin_HD.xml"
 FONT = "/usr/share/fonts/LiberationSans-Regular.ttf"
 if not path.exists(FONT):
 	FONT = "/usr/share/fonts/nmsbd.ttf"
@@ -72,7 +72,7 @@ def readskin(eskin=None):
 			s = s.replace("scrollbarSliderForegroundColor", "scrollbarForegroundColor")
 	except (OSError, IOError, Et.ParseError):
 		return ""
-	return s.strip().replace("{col1}", cf[1]).replace("{col2}", cf[2]).replace("{col3}", cf[3]).replace("{picpath}", PLUGINPATH + "img/")
+	return s.strip().replace("{col1}", cf[1]).replace("{col2}", cf[2]).replace("{col3}", cf[3]).replace("{picpath}", PLUGINPATH)
 
 
 def vttxmltosrt(data):
@@ -187,9 +187,9 @@ class Mediathekviewweb(Screen):
 				if js.get("url_video_low"):
 					urls.append(("Niedrig", js.get("url_video_low") + "##" + sub))
 				img = js.get("url_website", "")
-				liste.append(("MVW_PLAY", ensure_str("[%s] %s - %s" % (js.get("channel", ""), js.get("topic", ""), js.get("title", ""))), urls, ensure_str("%s%s\n%s" % ("UT\n" if sub else "", timestamp, js.get("description", ""))), img, duration, ""))
+				liste.append(("MVW_PLAY", ensure_str("[%s] %s - %s" % (js.get("channel", ""), js.get("topic", ""), js.get("title", ""))), urls, ensure_str("%s%s%s\n%s" % ("Nur Austria\n" if "cms-austria" in str(urls) else "", "UT " if sub else "", timestamp, js.get("description", ""))), img, duration, ""))
 			if totalResults > (page * size):
-				liste.append(("MVW_API", "Nextpage", (ensure_str(query), ensure_str(channel), (page + 1), size), "", PLUGINPATH + "/img/" + "nextpage.png", "", ""))
+				liste.append(("MVW_API", "NextPage (%s / %s)" % ((page + 1), (totalResults + size - 1) // size), (ensure_str(query), ensure_str(channel), (page + 1), size), "", PLUGINPATH + "nextpage.png", "", ""))
 		if liste:
 			self["movielist"].setList(liste)
 			self["movielist"].setIndex(int(index))
@@ -199,14 +199,14 @@ class Mediathekviewweb(Screen):
 			self.session.open(MessageBox, "Kein Eintrag vorhanden", MessageBox.TYPE_INFO, timeout=5)
 
 	def HauptMenu(self, index="0"):
-		menu = [("MVW_SUCHE", "Überall Suchen", ("", "", 1, 100, False), "", PLUGINPATH + "/img/" + "suche.png", "", ""), ("MVW_API", "Überall Stöbern", ("", "", 1, 100, False), "", PLUGINPATH + "img/" + "home.png", "", ""), ("MVW_SENDER_SUCHE", "Sender Suche", ("", "", 1, 100, False), "", PLUGINPATH + "/img/" + "suche.png", "", ""), ("MVW_SENDER", "Sender Stöbern", ("", "", 1, 100, False), "", PLUGINPATH + "/img/" + "sender.png", "", "")]
+		menu = [("MVW_SUCHE", "Überall Suchen", ("", "", 1, 100, False), "", PLUGINPATH + "suche.png", "", ""), ("MVW_API", "Überall Stöbern", ("", "", 1, 100, False), "", PLUGINPATH + "home.png", "", ""), ("MVW_SENDER_SUCHE", "Sender Suche", ("", "", 1, 100, False), "", PLUGINPATH + "suche.png", "", ""), ("MVW_SENDER", "Sender Stöbern", ("", "", 1, 100, False), "", PLUGINPATH + "sender.png", "", "")]
 		self["movielist"].setList(menu)
 		self["movielist"].setIndex(int(index))
 		self.infos()
 
 	def Sender(self, index="0", action="MVW_CHANNEL"):
 		URL = "https://api.ardmediathek.de/image-service/images/urn:ard:image:"
-		sender = [(action, "ARD", "", "", URL + "cddcfbc2887edfac?ch=bb94ade5984b3b54&w=360", "", ""), (action, "ZDF", "", "", "https://www.zdf.de/static/0.104.2262/img/appicons/zdf-152.png", "", ""), (action, "ZDF-tivi", "", "", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/ZDFtivi_logo.svg/320px-ZDFtivi_logo.svg.png", "", ""), (action, "ARTE.DE", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", ""), (action, "SWR", "", "", URL + "aa24d7b7a46ac51c?ch=d6485202286d7033&w=360", "", ""), (action, "NDR", "", "", URL + "8d587d540cd01169?w=360", "", ""), (action, "3Sat", "", "", URL + "bdced2e15aab3c69?w=360&ch=b92f2ae35c4a1309", "", ""), (action, "KiKA", "", "", URL + "34a231a870f22c6d?w=360&ch=865612894cbd4d56", "", ""), (action, "BR", "", "", URL + "e73b862eee3232c4?ch=7560abc4cc794ac5&w=360", "", ""), (action, "SR", "", "", URL + "ff434ca6a62db52e?ch=542282531695b516&w=360", "", ""), (action, "Radio Bremen TV", "", "", URL + "7b4c72c6e85a6620?ch=468f72b78a0ed537&w=360", "", ""), (action, "DW", "", "", URL + "8d853ccf548a874f?ch=a285b4113c76fea4&w=360", "", ""), (action, "HR", "", "", URL + "10f8968f47d2528e?w=360&ch=393ec00d9f489f74", "", ""), (action, "MDR", "", "", URL + "68c2d007353ffcea?ch=dfd3a69469855178&w=360", "", ""), (action, "WDR", "", "", URL + "7a4016b5348d0a80?ch=a04121766f1f3d82&w=360", "", ""), (action, "Funk.net", "", "", "https://www.funk.net/img/favicons/favicon-192x192.png", "", ""), (action, "RBB", "", "", URL + "0ed44c2fbb444e41?ch=a7ba657f549573d2&w=360", "", ""), (action, "PHOENIX", "", "", URL + "0740d8e76701b87c?ch=ac815bf512ad7d9b&w=360", "", ""), (action, "RBTV", "", "", "https://upload.wikimedia.org/wikipedia/commons/8/86/Rocket_Beans_RBTV_Logo.png", "", ""), (action, "ORF", "", "", "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/ORF_logo.svg/320px-ORF_logo.svg.png", "", ""), (action, "SRF", "", "", "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Schweizer_Radio_und_Fernsehen_Logo.svg/320px-Schweizer_Radio_und_Fernsehen_Logo.svg.png", "", ""), (action, "ARTE.FR", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", ""), (action, "ARTE.EN", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", ""), (action, "ARTE.ES", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", ""), (action, "ARTE.PL", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", ""), (action, "ARTE.IT", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", "")]
+		sender = [(action, "ARD", "", "", URL + "cddcfbc2887edfac?ch=bb94ade5984b3b54&w=360", "", ""), (action, "ZDF", "", "", "https://www.zdf.de/static/0.104.2262/img/appicons/zdf-152.png", "", ""), (action, "ZDF-tivi", "", "", "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/ZDFtivi_logo.svg/320px-ZDFtivi_logo.svg.png", "", ""), (action, "ARTE.DE", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", ""), (action, "SWR", "", "", URL + "aa24d7b7a46ac51c?ch=d6485202286d7033&w=360", "", ""), (action, "NDR", "", "", URL + "8d587d540cd01169?w=360", "", ""), (action, "3Sat", "", "", URL + "bdced2e15aab3c69?w=360&ch=b92f2ae35c4a1309", "", ""), (action, "KiKA", "", "", URL + "34a231a870f22c6d?w=360&ch=865612894cbd4d56", "", ""), (action, "BR", "", "", URL + "e73b862eee3232c4?ch=7560abc4cc794ac5&w=360", "", ""), (action, "SR", "", "", URL + "ff434ca6a62db52e?ch=542282531695b516&w=360", "", ""), (action, "Radio Bremen TV", "", "", URL + "7b4c72c6e85a6620?ch=468f72b78a0ed537&w=360", "", ""), (action, "DW", "", "", URL + "8d853ccf548a874f?ch=a285b4113c76fea4&w=360", "", ""), (action, "HR", "", "", URL + "10f8968f47d2528e?w=360&ch=393ec00d9f489f74", "", ""), (action, "MDR", "", "", URL + "68c2d007353ffcea?ch=dfd3a69469855178&w=360", "", ""), (action, "WDR", "", "", URL + "7a4016b5348d0a80?ch=a04121766f1f3d82&w=360", "", ""), (action, "Funk.net", "", "", "https://www.funk.net/img/favicons/favicon-192x192.png", "", ""), (action, "RBB", "", "", URL + "0ed44c2fbb444e41?ch=a7ba657f549573d2&w=360", "", ""), (action, "PHOENIX", "", "", URL + "0740d8e76701b87c?ch=ac815bf512ad7d9b&w=360", "", ""), (action, "RBTV", "", "", "https://www.butenunbinnen.de/static/img/favicons/apple-touch-icon-180.png", "", ""), (action, "ORF", "", "", "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/ORF_logo.svg/320px-ORF_logo.svg.png", "", ""), (action, "SRF", "", "", "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Schweizer_Radio_und_Fernsehen_Logo.svg/320px-Schweizer_Radio_und_Fernsehen_Logo.svg.png", "", ""), (action, "ARTE.FR", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", ""), (action, "ARTE.EN", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", ""), (action, "ARTE.ES", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", ""), (action, "ARTE.PL", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", ""), (action, "ARTE.IT", "", "", URL + "f9195b8bcbeaecc9?ch=fa42703f1b4c20bc&w=360", "", "")]
 		self["movielist"].setList(sender)
 		self["movielist"].setIndex(int(index))
 		self.infos()
@@ -394,7 +394,7 @@ class Mediathekviewweb(Screen):
 	def Play(self, url):
 		url = url and url[1]
 		if url:
-			sref = eServiceReference(4097, 0, ensure_str(url))
+			sref = eServiceReference(4097, 0, ensure_str(url.split("##")[0]))
 			sref.setName(self["movielist"].getCurrent()[1])
 			self.session.open(Player, sref)
 
@@ -427,10 +427,10 @@ class Mediathekviewweb(Screen):
 	def infos(self):
 		if self["movielist"].getCurrent() is not None and isinstance(self["movielist"].getCurrent(), tuple):
 			self["handlung"].setText(str(self["movielist"].getCurrent()[3]))
-		if "MVW_PLAY" in self["movielist"].getCurrent()[0]:
-			callInThread(self.mvw_image, self["movielist"].getCurrent()[4])
-		else:
-			self.show_cover()
+			if "MVW_PLAY" in self["movielist"].getCurrent()[0]:
+				callInThread(self.mvw_image, self["movielist"].getCurrent()[4])
+			else:
+				self.show_cover()
 
 	def show_cover(self):
 		if self["movielist"].getCurrent() is not None:
@@ -567,8 +567,8 @@ class Choicebox(ChoiceBox):
 		self.close()
 
 	def keyGreen(self):
-		cursel = self["list"].l.getCurrentSelection()
-		if cursel:
-			self.goEntry(cursel[0])
+		c = self["list"].l.getCurrentSelection()
+		if c:
+			self.goEntry(c[0])
 		else:
 			self.cancel()
